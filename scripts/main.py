@@ -10,7 +10,7 @@ from datetime import date
 import os
 from tqdm import tqdm
 from datetime import date
-
+import time
 
 
 def launch_html_collection(websites, marques, input_df):
@@ -34,7 +34,7 @@ def launch_html_collection(websites, marques, input_df):
     s = Service('chromedriver.exe')
     chromeOptions = Options()
 
-    chromeOptions.add_argument("--headless=new")
+    # chromeOptions.add_argument("--headless=new")
     chromeOptions.add_argument("--blink-settings=imagesEnabled=false")
 
     chromeOptions.add_argument('--ignore-certificate-errors-spki-list')
@@ -48,14 +48,13 @@ def launch_html_collection(websites, marques, input_df):
     # Turn-off userAutomationExtension 
     chromeOptions.add_experimental_option("useAutomationExtension", False) 
 
-    driver = webdriver.Chrome(service=s, options=chromeOptions)
-    driver.implicitly_wait(10)
-
     soup_df = pd.DataFrame()
 
     for website in tqdm(websites):
         print("\n", f"---------------------- Extracting data from {website.upper()} -------------------------", "\n")
         for marque in marques :
+            driver = webdriver.Chrome(service=s, options=chromeOptions)
+            driver.implicitly_wait(3)
             soup_df = html_collection(website, marque, input_df, soup_df, driver)
             print("\n", f"------{marque} information collected", "\n")
 
@@ -87,8 +86,10 @@ def save_data(data, path):
 
 if __name__ =="__main__":
 
+    start_time = time.time()
+
     #Choice of websites
-    websites = ["raja","jpg"] #"manutan","bruneau","jpg","raja","bernard"
+    websites = ["bernard","jpg","raja","manutan","bruneau"]
 
     #Choice of brands
     marques = import_brands()
@@ -109,3 +110,6 @@ if __name__ =="__main__":
     path = os.path.join(file_path,file_name) #Concatenating the path of the folder and the name of the file
     save_data(collect_df, path)
 
+    #Printing time of exectution
+    duration = round((time.time() - start_time) / 60,2)
+    print(f" Execution time : {duration} minutes ")

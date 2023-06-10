@@ -70,7 +70,6 @@ def html_collection(website, marque, input_df, soup_df, driver):
             # match = re.search(r'sur\s+(\d+)', match_html.text)
             nb_products = int(match_html.group(1).replace('\xa0','').replace(' ',''))
             nb_pages = int(nb_products / 28) + 1
-            print(nb_products)
             for nb_page in range(1,nb_pages):
                 query = input_df.loc[input_df["website"]==website,"url"].values[0].format(marque_field = marque, max_product=nb_page * 28)    
                 driver.get(query)
@@ -115,23 +114,25 @@ def html_collection(website, marque, input_df, soup_df, driver):
                                                     "marque": marque,
                                                     "html_content": html_by_page},index=list(range(len(html_by_page))))]).reset_index(drop=True)
     else:
+        time.sleep(2)
         e = True
-        while e == True:
-            try:
+        while e:
+            try :
                 loadMoreButton = driver.find_element(By.XPATH,input_df.loc[input_df["website"]==website,"xpath_load_more_button"].values[0])
-                time.sleep(8)
+                time.sleep(4)
                 loadMoreButton.click()
-                time.sleep(8)
-                e = True
-            except Exception:
+                time.sleep(2)
+            except NoSuchElementException:
                 e = False
+                time.sleep(2)
     
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         marque = marque.replace("%20"," ")
         soup_df = pd.concat([soup_df, pd.DataFrame({"website": website,
                                                         "marque": marque,
                                                         "html_content": soup},index=[0])]).reset_index(drop=True)
-            
+    driver.close()
+
     return soup_df
 
 def prices_collection(soup_df, input_df):
@@ -157,8 +158,6 @@ def prices_collection(soup_df, input_df):
             website = row["website"]
             marque = row["marque"]
             html_content = row["html_content"]
-
-            # print(f"------------------extracting prices of {marque} from {website}---------------------")
 
             #Collecting products names
             results_names = html_content.find_all(input_df.loc[input_df["website"]==website,"class_name"].values[0][0],
@@ -207,7 +206,7 @@ def prices_collection(soup_df, input_df):
                 results_marque_df = pd.DataFrame({
                                     "Date_extraction": today,
                                     "Site": website,
-                                    "Marque": marque.replace("%20"," "),
+                                    "Marque": marque.replace("%20"," ").lower(),
                                     "Produit": product_names,
                                     "Référence": product_ref,
                                     "Prix": product_prices})
